@@ -1,0 +1,241 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PoE Currency Calculator</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+            min-height: 100vh;
+            padding: 20px;
+            color: #eee;
+        }
+        .container {
+            max-width: 700px;
+            margin: 0 auto;
+            background: rgba(255,255,255,0.05);
+            border-radius: 15px;
+            padding: 30px;
+            box-shadow: 0 8px 32px rgba(0,0,0,0.3);
+        }
+        h1 {
+            text-align: center;
+            margin-bottom: 25px;
+            color: #ffd700;
+            font-size: 1.8em;
+        }
+        .form-group {
+            margin-bottom: 20px;
+        }
+        label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 500;
+        }
+        .currency-selector {
+            display: flex;
+            gap: 20px;
+            margin-bottom: 20px;
+            justify-content: center;
+        }
+        .currency-selector label {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            cursor: pointer;
+            padding: 10px 20px;
+            background: rgba(255,255,255,0.1);
+            border-radius: 8px;
+            transition: background 0.3s;
+        }
+        .currency-selector label:hover {
+            background: rgba(255,255,255,0.2);
+        }
+        input[type="radio"] { accent-color: #ffd700; }
+        input[type="range"], input[type="number"], select {
+            width: 100%;
+            padding: 10px;
+            border: none;
+            border-radius: 8px;
+            background: rgba(255,255,255,0.1);
+            color: #fff;
+            font-size: 1em;
+        }
+        input[type="range"] { cursor: pointer; }
+        select option { background: #1a1a2e; color: #fff; }
+        .range-value {
+            text-align: right;
+            color: #ffd700;
+            font-weight: bold;
+            margin-top: 5px;
+        }
+        .results {
+            background: rgba(255,215,0,0.1);
+            border-radius: 10px;
+            padding: 20px;
+            margin-top: 25px;
+        }
+        .result-item {
+            display: flex;
+            justify-content: space-between;
+            padding: 10px 0;
+            border-bottom: 1px solid rgba(255,255,255,0.1);
+        }
+        .result-item:last-child { border-bottom: none; }
+        .result-value {
+            color: #ffd700;
+            font-weight: bold;
+            font-size: 1.1em;
+        }
+        .multipliers {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 15px;
+            margin-top: 20px;
+        }
+        .multiplier-box {
+            background: rgba(255,255,255,0.05);
+            padding: 15px;
+            border-radius: 8px;
+            text-align: center;
+        }
+        .multiplier-value {
+            color: #4ecdc4;
+            font-size: 1.3em;
+            font-weight: bold;
+            margin-top: 5px;
+        }
+        .info {
+            margin-top: 25px;
+            padding: 15px;
+            background: rgba(0,0,0,0.2);
+            border-radius: 8px;
+            font-size: 0.9em;
+            line-height: 1.6;
+        }
+        .info strong { color: #ffd700; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>📊 PoE Currency Calculator</h1>
+        
+        <div class="currency-selector">
+            <label>
+                <input type="radio" name="currency" value="divine" checked>
+                Divine Orb
+            </label>
+            <label>
+                <input type="radio" name="currency" value="chaos">
+                Chaos Orb
+            </label>
+        </div>
+
+        <div class="form-group">
+            <label>Tier карты:</label>
+            <select id="mapTier">
+                {% for i in range(1, 18) %}
+                <option value="{{ i }}" {% if i == 16 %}selected{% endif %}>T{{ i }}</option>
+                {% endfor %}
+            </select>
+        </div>
+
+        <div class="form-group">
+            <label>Item Quantity (%):</label>
+            <input type="range" id="itemQuantity" min="0" max="500" value="100">
+            <div class="range-value" id="iqValue">100%</div>
+        </div>
+
+        <div class="form-group">
+            <label>Убито монстров:</label>
+            <input type="number" id="monstersKilled" value="500" min="1">
+        </div>
+
+        <div class="results">
+            <div class="result-item">
+                <span>Шанс с монстра:</span>
+                <span class="result-value" id="chancePerMonster">-</span>
+            </div>
+            <div class="result-item">
+                <span>Шанс хотя бы 1:</span>
+                <span class="result-value" id="chanceAtLeast">-</span>
+            </div>
+            <div class="result-item">
+                <span>Ожидаемое количество:</span>
+                <span class="result-value" id="expectedCount">-</span>
+            </div>
+            
+            <div class="multipliers">
+                <div class="multiplier-box">
+                    <div>Множитель Tier</div>
+                    <div class="multiplier-value" id="mapMultiplier">-</div>
+                </div>
+                <div class="multiplier-box">
+                    <div>Множитель IIQ</div>
+                    <div class="multiplier-value" id="iiqMultiplier">-</div>
+                </div>
+            </div>
+        </div>
+
+        <div class="info">
+            <strong>📌 Информация:</strong><br>
+            • Divine Orb и Exalted Orb имеют одинаковый базовый шанс (GGG)<br>
+            • Chaos Orb выпадает значительно чаще (~1 на 2,000 дропов)<br>
+            • Item Quantity (IIQ) увеличивает шанс выпадения валюты<br>
+            • Item Rarity (IIR) НЕ влияет на валюту<br>
+            • T16-T17 дают максимальный шанс<br>
+            <br>
+            <em>⚠️ Точные дроп-рейты не раскрываются GGG. Расчёты приблизительны.</em>
+        </div>
+    </div>
+
+    <script>
+        const inputs = ['mapTier', 'itemQuantity', 'monstersKilled'];
+        const currencyRadios = document.querySelectorAll('input[name="currency"]');
+        
+        function updateIQValue() {
+            document.getElementById('iqValue').textContent = document.getElementById('itemQuantity').value + '%';
+        }
+        
+        async function calculate() {
+            updateIQValue();
+            
+            const currency = document.querySelector('input[name="currency"]:checked').value;
+            const mapTier = parseInt(document.getElementById('mapTier').value);
+            const itemQuantity = parseInt(document.getElementById('itemQuantity').value);
+            const monstersKilled = parseInt(document.getElementById('monstersKilled').value);
+            
+            try {
+                const response = await fetch('/calculate', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ currency, mapTier, itemQuantity, monstersKilled })
+                });
+                const data = await response.json();
+                
+                document.getElementById('chancePerMonster').textContent = data.chance_percent.toFixed(6) + '%';
+                document.getElementById('chanceAtLeast').textContent = data.chance_at_least_one.toFixed(2) + '%';
+                document.getElementById('expectedCount').textContent = data.expected_count.toFixed(4) + ' ' + data.currency_name;
+                document.getElementById('mapMultiplier').textContent = 'x' + data.map_multiplier.toFixed(2);
+                document.getElementById('iiqMultiplier').textContent = 'x' + data.iiq_multiplier.toFixed(2);
+            } catch (e) {
+                console.error('Error:', e);
+            }
+        }
+        
+        inputs.forEach(id => {
+            document.getElementById(id).addEventListener('input', calculate);
+        });
+        
+        currencyRadios.forEach(radio => {
+            radio.addEventListener('change', calculate);
+        });
+        
+        // Initial calculation
+        calculate();
+    </script>
+</body>
+</html>

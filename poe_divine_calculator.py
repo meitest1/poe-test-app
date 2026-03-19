@@ -202,7 +202,7 @@ class CalculatorApp:
             width=6
         )
         self.quantity_label.grid(row=3, column=2, sticky=tk.W, padx=5)
-        self.item_quantity_var.trace_add('write', lambda *args: self._update_quantity_label())
+        self.item_quantity_var.trace_add('write', lambda *args: self._calculate())
         
         # Monsters Killed
         ttk.Label(main_frame, text="Убито монстров:").grid(
@@ -308,6 +308,7 @@ class CalculatorApp:
     def _update_quantity_label(self):
         """Обновление метки количества предметов"""
         self.quantity_label.config(text=f"{self.item_quantity_var.get()}%")
+        self._calculate()
     
     def _calculate(self):
         """Выполнение расчёта"""
